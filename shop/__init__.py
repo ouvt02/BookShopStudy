@@ -13,12 +13,38 @@ class Book:
     genre: str
 
 
-# pylint: disable=too-few-public-methods
 class Cart:
     '''Класс Корзина'''
     def __init__(self, cart_id: int) -> None:
         self.cart_id: int = cart_id
         self.books: list[Book] = []
+        self.in_delivery = False
+        self.in_refund = False
+        self.delivery_address = ""
+        self.delivery_time = ""
+        self.delivery_pay_way = ""
+
+    def delivery(self, delivery_info: str) -> bool:
+        '''Метод для оформления доставки'''
+        delivery = delivery_info.split(' ')
+
+        self.in_delivery = True
+        self.delivery_address = delivery[0]
+        self.delivery_time = delivery[1]
+        self.delivery_pay_way = delivery[2]
+
+        return True
+
+    def refund(self, refund: list[str]) -> bool:
+        '''Метод для отмены доставки'''
+        self.in_delivery = False
+        self.in_refund = True
+
+        self.delivery_pay_way = refund[1]
+        self.delivery_address = refund[2]
+        self.delivery_time = refund[3]
+
+        return True
 
 
 class Shop:
@@ -27,7 +53,11 @@ class Shop:
         self.catalog: list[Book] = []
         self.carts_counter: int = 0
         self.carts: dict[int, Cart] = {}
+        self.orders: dict[int, int] = {}
+        self.orders_counter = 0
 
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
     def process(self, cmd: str) -> str:
         '''Метод для обработки комманд'''
         result = f"Невозможно выполнить комманду '{cmd}'\n"
@@ -70,6 +100,35 @@ class Shop:
                     out += f"{book.price} {book.publ_house} {book.genre}\n"
             result = out
 
+        elif cmd.lower().startswith("оформить заказ"):
+            order_info = cmd.lower().split("оформить заказ")[1]
+            if self.delivery(order_info.strip()):
+                result = f"Заказ {self.orders_counter - 1} "
+                result += "оформлен "
+                cart = self.carts[self.carts_counter - 1]
+                result += f"{cart.delivery_address} "
+                result += f"{cart.delivery_time} "
+                result += f"{cart.delivery_pay_way}\n"
+            else:
+                result = "Корзина пуста\n"
+
+        elif cmd.lower().startswith("отменить заказ"):
+            refund_info = cmd.lower().split("отменить заказ")[1]
+            if self.refund(refund_info.strip()):
+                cart_num = self.orders[int(refund_info.strip()[0])]
+                out = f"Заказ {int(refund_info.strip()[0])} отменен "
+                out += f"{self.carts[cart_num].delivery_pay_way} "
+                out += f"{self.carts[cart_num].delivery_address} "
+                out += f"{self.carts[cart_num].delivery_time}: "
+                for book in self.carts[cart_num].books:
+                    out += f"{book.title} {book.author} {book.year} "
+                    out += f"{book.price} {book.publ_house} {book.genre}\n"
+                del self.orders[int(refund_info.strip()[0])]
+                self.orders_counter -= 1
+                result = out
+            else:
+                result = "Не существует заказа\n"
+
         return result
 
     def add_book(self, book_info: str) -> bool:
@@ -90,7 +149,8 @@ class Shop:
         if book_to_cart is None:
             return False
 
-        if self.carts_counter == 0:
+        if (self.carts_counter == 0 or
+                self.carts[self.carts_counter - 1].in_delivery):
             self.carts[self.carts_counter] = Cart(self.carts_counter)
             self.carts[self.carts_counter].books.append(book_to_cart)
             self.carts_counter += 1
@@ -117,3 +177,26 @@ class Shop:
             return False
 
         return True
+
+    def delivery(self, delivery_info: str) -> bool:
+        '''Метод для оформления доставки'''
+        if (self.carts_counter == 0 or
+                self.carts[self.carts_counter - 1].in_delivery):
+            return False
+
+        result = self.carts[self.carts_counter - 1].delivery(delivery_info)
+        self.orders[self.orders_counter] = self.carts_counter - 1
+        self.orders_counter += 1
+
+        return result
+
+    def refund(self, refund_info: str) -> bool:
+        '''Метод для отмены доставки'''
+        refund = refund_info.split(' ')
+        order_num = int(refund[0])
+
+        if (self.carts_counter == 0 or order_num not in self.carts or
+                self.carts[order_num].in_refund):
+            return False
+
+        return self.carts[order_num].refund(refund)
