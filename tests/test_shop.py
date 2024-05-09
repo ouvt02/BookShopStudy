@@ -57,3 +57,23 @@ def test_delete_unknown_from_cart(shop):
 
     cart = shop.process("Просмотреть содержимое корзины")
     assert (cart.lower() == "название1 автор1 2000 1250 издательство1 жанр1\n")
+
+def test_delivery_decline(shop):
+    shop.process("Добавить книгу Название1 Автор1 2000 1250 Издательство1 Жанр1")
+    shop.process("Добавить книгу Название2 Автор2 1900 2500 Издательство2 Жанр2")
+
+    shop.process("Положить в корзину книгу Название1")
+    order_status = shop.process("Оформить заказ Адрес Время Оплата_при_получении")
+    assert (order_status.lower() == "заказ 0 оформлен адрес время оплата_при_получении\n")
+
+    declined_order = shop.process("Отменить заказ 0 с_курьером Адрес Время")
+    assert (declined_order.lower() == "заказ 0 отменен с_курьером адрес время: название1 автор1 2000 1250 издательство1 жанр1\n")
+
+def test_delivery_empty(shop):
+    order_status = shop.process("Оформить заказ Адрес Время Оплата_при_получении")
+    assert (order_status.lower() == "корзина пуста\n")
+
+def test_decline_empty(shop):
+    declined_order = shop.process("Отменить заказ 0 с_курьером Адрес Время")
+    assert (declined_order.lower() == "не существует заказа\n")
+
