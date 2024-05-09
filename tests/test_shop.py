@@ -37,13 +37,23 @@ def test_cart_adding_deleting(shop):
     shop.process("Удалить из корзины Название2")
     cart = shop.process("Просмотреть содержимое корзины")
     assert (cart.lower() == "название1 автор1 2000 1250 издательство1 жанр1\n")
-    
+
 def test_add_unknown_in_cart(shop):
     shop.process("Добавить книгу Название1 Автор1 2000 1250 Издательство1 Жанр1")
     res = shop.process("Положить в корзину книгу Название1")
 
     res = shop.process("Положить в корзину книгу Название2")
     assert (res.lower() == "книги название2 нет в каталоге")
+
+    cart = shop.process("Просмотреть содержимое корзины")
+    assert (cart.lower() == "название1 автор1 2000 1250 издательство1 жанр1\n")
+
+def test_delete_unknown_from_cart(shop):
+    shop.process("Добавить книгу Название1 Автор1 2000 1250 Издательство1 Жанр1")
+    res = shop.process("Положить в корзину книгу Название1")
+
+    res = shop.process("Удалить из корзины Название2")
+    assert (res.lower() == "книги название2 нет в корзине")
 
     cart = shop.process("Просмотреть содержимое корзины")
     assert (cart.lower() == "название1 автор1 2000 1250 издательство1 жанр1\n")
