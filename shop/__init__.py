@@ -13,6 +13,7 @@ class Book:
     genre: str
 
 
+# pylint: disable=too-many-instance-attributes
 class Cart:
     '''Класс Корзина'''
     def __init__(self, cart_id: int) -> None:
@@ -23,6 +24,8 @@ class Cart:
         self.delivery_address = ""
         self.delivery_time = ""
         self.delivery_pay_way = ""
+        self.delivered = False
+        self.refunded = False
 
     def delivery(self, delivery_info: str) -> bool:
         '''Метод для оформления доставки'''
@@ -129,6 +132,30 @@ class Shop:
             else:
                 result = "Не существует заказа\n"
 
+        elif cmd.lower().startswith("доставить заказ"):
+            order_num = int((cmd.lower().split("доставить заказ")[1]).strip())
+            out = f"Доставлен заказ {order_num} "
+            if self.deliver(order_num):
+                for book in self.carts[order_num].books:
+                    out += f"{book.title} {book.author} {book.year} "
+                    out += f"{book.price} {book.publ_house} {book.genre}\n"
+                result = out
+            else:
+                result = f"Не существует заказа {order_num}"
+
+        elif cmd.lower().startswith("принять возврат заказа"):
+            order_info = cmd.lower().split("принять возврат заказа")[1]
+            order_info = order_info.strip()
+            order_num = int(order_info)
+            out = f"Отменен заказ {order_num} "
+            if self.cancel(order_num):
+                for book in self.carts[order_num].books:
+                    out += f"{book.title} {book.author} {book.year} "
+                    out += f"{book.price} {book.publ_house} {book.genre}\n"
+                result = out
+            else:
+                result = f"Не существует заказа {order_num}"
+
         return result
 
     def add_book(self, book_info: str) -> bool:
@@ -200,3 +227,33 @@ class Shop:
             return False
 
         return self.carts[order_num].refund(refund)
+
+    def deliver(self, order_num: int) -> bool:
+        '''Метод для доставки заказа'''
+        # pylint: disable=too-many-boolean-expressions
+        if (self.carts_counter == 0 or order_num not in self.carts or
+                not self.carts[order_num].in_delivery or
+                self.carts[order_num].in_refund or
+                self.carts[order_num].refunded or
+                self.carts[order_num].delivered):
+            return False
+
+        self.carts[order_num].delivered = True
+        self.carts[order_num].in_delivery = False
+
+        return True
+
+    def cancel(self, order_num: int) -> bool:
+        '''Метод для отмены заказа'''
+        # pylint: disable=too-many-boolean-expressions
+        if (self.carts_counter == 0 or order_num not in self.carts or
+                self.carts[order_num].in_delivery or
+                not self.carts[order_num].in_refund or
+                self.carts[order_num].refunded or
+                self.carts[order_num].delivered):
+            return False
+
+        self.carts[order_num].refunded = True
+        self.carts[order_num].in_refund = False
+
+        return True
