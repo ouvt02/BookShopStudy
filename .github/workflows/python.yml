@@ -30,10 +30,10 @@ jobs:
       run: poetry run pytest --cov --cov-branch
 
     - name: Run pylint
-      run: poetry run pylint eshop
+      run: poetry run pylint shop
 
     - name: Run mypy
-      run: poetry run mypy eshop --strict
+      run: poetry run mypy shop --strict
 
     - name: Run flake8
-      run: poetry run flake8 eshop
+      run: poetry run flake8 shop
