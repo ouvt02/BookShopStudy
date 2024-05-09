@@ -29,6 +29,13 @@ class Shop:
             message += "успешно добавлена\n"
             return message
 
+        if cmd.lower().startswith("просмотреть каталог"):
+            out = ""
+            for book in self.catalog:
+                out += f"{book.title} {book.author} {book.year} {book.price} "
+                out += f"{book.publ_house} {book.genre}\n"
+            return out
+
         return f"Невозможно выполнить комманду '{cmd}'\n"
 
     def add_book(self, book_info: str) -> bool:
