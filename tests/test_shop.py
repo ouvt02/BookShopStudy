@@ -77,3 +77,27 @@ def test_decline_empty(shop):
     declined_order = shop.process("Отменить заказ 0 с_курьером Адрес Время")
     assert (declined_order.lower() == "не существует заказа\n")
 
+def test_delivered(shop):
+    shop.process("Добавить книгу Название1 Автор1 2000 1250 Издательство1 Жанр1")
+    shop.process("Положить в корзину книгу Название1")
+    shop.process("Оформить заказ Адрес Время Оплата_при_получении")
+
+    result = shop.process("Доставить заказ 0")
+    assert (result.lower() == "доставлен заказ 0 название1 автор1 2000 1250 издательство1 жанр1\n")
+
+def test_delivered_unknown(shop):
+    result = shop.process("Доставить заказ 0")
+    assert (result.lower() == "не существует заказа 0")
+
+def test_refunded(shop):
+    shop.process("Добавить книгу Название1 Автор1 2000 1250 Издательство1 Жанр1")
+    shop.process("Положить в корзину книгу Название1")
+    shop.process("Оформить заказ Адрес Время Оплата_при_получении")
+    declined_order = shop.process("Отменить заказ 0 с_курьером Адрес Время")
+
+    result = shop.process("Принять возврат заказа 0")
+    assert (result.lower() == "отменен заказ 0 название1 автор1 2000 1250 издательство1 жанр1\n")
+
+def test_refunded_unknown(shop):
+    result = shop.process("Принять возврат заказа 0")
+    assert (result.lower() == "не существует заказа 0")
